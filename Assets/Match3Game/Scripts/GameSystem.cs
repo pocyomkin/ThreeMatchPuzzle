@@ -43,7 +43,7 @@ public class Cell {
 /// </summary>
 public class GameSystem : MonoBehaviour {
     public Sprite[] sprites; //{"starfish", "sword", "bottle", "bird", "poison", "gold"};
-	string[] sounds = new string[]{"perc", "fx", "glass", "coo", "water", "cash"};
+	string[] sounds = new string[]{"perc", "fx", "glass", "coo", "water", "perc", "fx", "glass", "coo", "water" };
     public EaseType easeType = EaseType.EaseOutBounce;
 	
 	public const int cellScale = 120;
@@ -78,6 +78,7 @@ public class GameSystem : MonoBehaviour {
 			audioMatchClip[i] = Resources.Load("Sounds/"+sounds[i], typeof(AudioClip)) as AudioClip;
 			audioMatchSource[i] = gameObject.AddComponent<AudioSource>();
 			audioMatchSource[i].clip = audioMatchClip[i];
+            Debug.Log("audioMatchSouce:" + audioMatchSource.Length);
 		}
 	}
 
@@ -100,7 +101,6 @@ public class GameSystem : MonoBehaviour {
 				Sprite sprite = sprites[(type-1)];
                 GameObject instance = Instantiate(matchItemPrefab) as GameObject;
                 instance.transform.parent = grid.transform;
-                //instance.transform.localPosition = Vector3.zero;
                 instance.GetComponent<SpriteRenderer>().sprite = sprite;
 				instance.transform.localScale = Vector3.one * cellScale;
 				instance.transform.localPosition = new Vector3( x * cellWidth, y * -cellHeight, 0f);
@@ -124,7 +124,6 @@ public class GameSystem : MonoBehaviour {
 
 	// Find Match-3 Tile
 	private Dictionary<TilePoint, Data.TileTypes> FindMatch(Cell[,] cells) {
-        Debug.Log("FindMatch(Cell[,] cells) ");
         Dictionary<TilePoint, Data.TileTypes> stack = new Dictionary<TilePoint, Data.TileTypes>();
         //ç∂è„Ç©ÇÁXï˚å¸Ç…èáî‘Ç…É}ÉbÉ`Ç∑ÇÈÇ©îªíË
 		for (var x = 0; x < Data.tileWidth; x++) {
@@ -470,8 +469,7 @@ public class GameSystem : MonoBehaviour {
                     if (6 <= item.matchCount && (item.Equals(a) || item.Equals(b))) {
                         item.cell.cellType = item.cell.cellType + 5;
                     }
-                }
-                else {
+                }else {
                     MatchItem bombtile = item;
                     foreach (MatchItem itemA in destroyList) {
                         if (!item.Equals(itemA) && (item.matchGroup == itemA.matchGroup)) {
@@ -489,6 +487,7 @@ public class GameSystem : MonoBehaviour {
                     if (6 <= item.matchCount) {
                         bombtile.cell.cellType = bombtile.cell.cellType + 5;
                     }
+                    break;
                 }
             }
 
@@ -496,23 +495,31 @@ public class GameSystem : MonoBehaviour {
 
 
         foreach (MatchItem item in destroyList) {
-			
-			int type = (int)item.cell.cellType;
+
+            int type = (int)item.cell.cellType;
+            audioMatchSource[(int)(item.cell.cellType) - 1].Play();
 
             if (type < 6) {
-                item.cell.cellType = Data.TileTypes.Empty;
-//                audioMatchSource[(int)(item.cell.cellType) - 1].Play();
+                 item.cell.cellType = Data.TileTypes.Empty;
+                 item.GetComponent<SpriteRenderer>().enabled = false;
             }
-            item.GetComponent<SpriteRenderer>().enabled = false;
 
-			GameObject instance = Instantiate(explosionPrefab) as GameObject;
+            GameObject instance = Instantiate(explosionPrefab) as GameObject;
 			instance.transform.parent = effectArea;
 			instance.transform.localPosition = new Vector3( item.point.x * cellWidth, item.point.y * -cellHeight, -5f);
 
 			DoStarEffect(instance.transform.localPosition, type);
-		}
-//		StartCoroutine( AttackMonster(0.7f) );
-		StartCoroutine( FillEmpty(0.5f) );
+
+            if(5 < type) {
+                Sprite sprite = sprites[(int)item.cell.cellType - 1];
+                SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+                renderer.sprite = sprite;
+                renderer.enabled = true;
+            }
+
+        }
+        //		StartCoroutine( AttackMonster(0.7f) );
+        StartCoroutine( FillEmpty(0.5f) );
 	}
 
 	// Find Hint Debug
