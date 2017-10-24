@@ -27,6 +27,13 @@ public class Data {
 	public enum TileTypes  { Empty, Attack, Shield, Herb, Scroll, Gold , AtBomb, ShBomb, HBomb, ScBomb, GBomb };
 }
 
+public class Charactor {
+    private int hp;
+    private int mp;
+    private int skill;
+}
+
+
 /// <summary>
 /// To record the location of tile data.
 /// </summary>
@@ -78,7 +85,6 @@ public class GameSystem : MonoBehaviour {
 			audioMatchClip[i] = Resources.Load("Sounds/"+sounds[i], typeof(AudioClip)) as AudioClip;
 			audioMatchSource[i] = gameObject.AddComponent<AudioSource>();
 			audioMatchSource[i].clip = audioMatchClip[i];
-            Debug.Log("audioMatchSouce:" + audioMatchSource.Length);
 		}
 	}
 
@@ -124,6 +130,7 @@ public class GameSystem : MonoBehaviour {
 
 	// Find Match-3 Tile
 	private Dictionary<TilePoint, Data.TileTypes> FindMatch(Cell[,] cells) {
+        MatchItem item;
         Dictionary<TilePoint, Data.TileTypes> stack = new Dictionary<TilePoint, Data.TileTypes>();
         //ç∂è„Ç©ÇÁXï˚å¸Ç…èáî‘Ç…É}ÉbÉ`Ç∑ÇÈÇ©îªíË
 		for (var x = 0; x < Data.tileWidth; x++) {
@@ -343,13 +350,119 @@ public class GameSystem : MonoBehaviour {
 		DoEmptyDown();
 	}
 
+    private MatchItem findBomb(List<MatchItem> destroyListBomb) {
+        foreach (MatchItem item in destroyListBomb) {
+            if (6 <= (int)item.cell.cellType ) {
+                return item;
+            }
+        }
+        return null;
+    }
+
 	// Check Match-3 Tile
 	void CheckMatch3(Dictionary<TilePoint, Data.TileTypes> stack , MatchItem a,MatchItem b){
+        List<MatchItem> destroyListBomb = new List<MatchItem>();
         List<MatchItem> destroyList = new List<MatchItem>();
+        List<MatchItem> bombList = new List<MatchItem>();
+
+        if (a != null) {
+            switch (a.cell.cellType) {
+                case Data.TileTypes.AtBomb:
+                case Data.TileTypes.ShBomb:
+                case Data.TileTypes.HBomb:
+                case Data.TileTypes.ScBomb:
+                case Data.TileTypes.GBomb:
+                    if (FindTile(new TilePoint(a.point.x, a.point.y + 1)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(a.point.x, a.point.y + 1)));
+                    }
+                    if (FindTile(new TilePoint(a.point.x, a.point.y - 1)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(a.point.x, a.point.y - 1)));
+                    }
+                    if (FindTile(new TilePoint(a.point.x - 1, a.point.y)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(a.point.x - 1, a.point.y)));
+                    }
+                    if (FindTile(new TilePoint(a.point.x + 1, a.point.y)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(a.point.x + 1, a.point.y)));
+                    }
+                    stack.Add(a.point,a.cell.cellType);
+                    break;
+                default:
+                    break;
+            }
+
+            switch (b.cell.cellType) {
+                case Data.TileTypes.AtBomb:
+                case Data.TileTypes.ShBomb:
+                case Data.TileTypes.HBomb:
+                case Data.TileTypes.ScBomb:
+                case Data.TileTypes.GBomb:
+                    if (FindTile(new TilePoint(b.point.x, b.point.y + 1)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(b.point.x, b.point.y + 1)));
+                    }
+                    if (FindTile(new TilePoint(b.point.x, b.point.y - 1)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(b.point.x, b.point.y - 1)));
+                    }
+                    if (FindTile(new TilePoint(b.point.x - 1, b.point.y)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(b.point.x - 1, b.point.y)));
+                    }
+                    if (FindTile(new TilePoint(b.point.x + 1, b.point.y)) != null) {
+                        destroyListBomb.Add(FindTile(new TilePoint(b.point.x + 1, b.point.y)));
+                    }
+                    stack.Add(b.point, b.cell.cellType);
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        while (findBomb(destroyListBomb) != null) {
+            MatchItem item = findBomb(destroyListBomb);
+            switch (item.cell.cellType) {
+                case Data.TileTypes.AtBomb:
+                case Data.TileTypes.ShBomb:
+                case Data.TileTypes.HBomb:
+                case Data.TileTypes.ScBomb:
+                case Data.TileTypes.GBomb:
+                    stack.Add(item.point, item.cell.cellType);
+                    destroyListBomb.Remove(item);
+                    if (FindTile(new TilePoint(item.point.x, item.point.y + 1)) != null) {
+                        if (!stack.ContainsKey(new TilePoint(item.point.x, item.point.y + 1))) {
+                            destroyListBomb.Add(FindTile(new TilePoint(item.point.x, item.point.y + 1)));
+                        }
+                    }
+                    if (FindTile(new TilePoint(item.point.x, item.point.y - 1)) != null) {
+                        if (!stack.ContainsKey(new TilePoint(item.point.x, item.point.y - 1))) {
+                            destroyListBomb.Add(FindTile(new TilePoint(item.point.x, item.point.y - 1)));
+                        }
+                    }
+                    if (FindTile(new TilePoint(item.point.x - 1, item.point.y)) != null) {
+                        if (!stack.ContainsKey(new TilePoint(item.point.x - 1, item.point.y))) {
+                            destroyListBomb.Add(FindTile(new TilePoint(item.point.x - 1, item.point.y)));
+                        }
+                    }
+                    if (FindTile(new TilePoint(item.point.x + 1, item.point.y)) != null) {
+                        if (!stack.ContainsKey(new TilePoint(item.point.x + 1, item.point.y))) {
+                            destroyListBomb.Add(FindTile(new TilePoint(item.point.x + 1, item.point.y)));
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        foreach (MatchItem item in destroyListBomb.ToArray()) {
+            if (stack.ContainsKey(item.point)) {
+                destroyListBomb.Remove(item);
+            }
+        }
 
         foreach (KeyValuePair<TilePoint, Data.TileTypes> item in stack){
                 destroyList.Add(FindTile(item.Key));
         }
+
+
 
         if (3 < destroyList.Count) {
             byte matchCount = 0;
@@ -458,51 +571,100 @@ public class GameSystem : MonoBehaviour {
                 destroyList[baseindex].matchCount = matchCount;
             }
 
-            foreach (MatchItem item in destroyList) {
-                if (a != null) {
-                    if (item.matchCount == 4 && (item.Equals(a) || item.Equals(b))) {
-                        item.cell.cellType = item.cell.cellType + 5;
-                    }
-                    if (item.matchCount == 5 && (item.Equals(a) || item.Equals(b))) {
-                        item.cell.cellType = item.cell.cellType + 5;
-                    }
-                    if (6 <= item.matchCount && (item.Equals(a) || item.Equals(b))) {
-                        item.cell.cellType = item.cell.cellType + 5;
-                    }
-                }else {
-                    MatchItem bombtile = item;
-                    foreach (MatchItem itemA in destroyList) {
-                        if (!item.Equals(itemA) && (item.matchGroup == itemA.matchGroup)) {
-                            if (item.matchCount <= itemA.matchCount) {
-                                bombtile = itemA;
+            if (a != null) {
+                foreach (MatchItem item in destroyList) {
+                    if (4 <= item.matchCount) {
+                        if(item.Equals(a) || item.Equals(b)){
+                            switch (item.matchCount) {
+                                case 4:
+                                case 5:
+                                case 6:
+                                case 7:
+                                default:
+                                    if ((int)item.cell.cellType < 6) {
+                                        item.cell.cellType = item.cell.cellType + 5;
+                                        bombList.Add(item);
+                                    }
+                                    break;
                             }
                         }
                     }
-                    if (bombtile.matchCount == 4) {
-                        bombtile.cell.cellType = bombtile.cell.cellType + 5;
-                    }
-                    if (item.matchCount == 5) {
-                        bombtile.cell.cellType = bombtile.cell.cellType + 5;
-                    }
-                    if (6 <= item.matchCount) {
-                        bombtile.cell.cellType = bombtile.cell.cellType + 5;
-                    }
-                    break;
                 }
             }
+            else {
+                int matchGroupCount = 0;
+                foreach (MatchItem item in destroyList) {
+                    if (matchGroupCount <= item.matchGroup) {
+                        matchGroupCount = item.matchGroup;
+                    }
+                }
+
+                List<MatchItem>[] matchGroupList = new List<MatchItem>[matchGroupCount];
+
+
+               foreach (MatchItem item in destroyList) {
+                    //Debug.Log(item != null);
+                    if (matchGroupList[item.matchGroup - 1]==null) {
+                        matchGroupList[item.matchGroup - 1] = new List<MatchItem>();
+                    }
+                    matchGroupList[item.matchGroup - 1].Add(item);
+                }
+
+                MatchItem bombTile;
+                foreach (List<MatchItem> matchList in matchGroupList) {
+                    bombTile = matchList[0];
+                    foreach (MatchItem item in matchList) {
+                        if (bombTile.matchCount < item.matchCount) {
+                            bombTile = item;
+                        }
+                    }
+                    if (4 <= bombTile.matchCount) {
+                        bombTile.cell.cellType = bombTile.cell.cellType + 5;
+                        bombList.Add(bombTile);
+                        destroyList.Remove(bombTile);
+                    }
+                }
+            }
+        }
+
+        foreach (MatchItem itembomb in bombList) {
+            foreach (MatchItem item in destroyList.ToArray()) {
+                if (itembomb.Equals(item)) {
+                    destroyList.Remove(itembomb);
+                }
+            }
+        }
+
+
+        foreach (MatchItem item in destroyListBomb) {
+            int type = (int)item.cell.cellType;
+            item.cell.cellType = Data.TileTypes.Empty;
+            item.GetComponent<SpriteRenderer>().enabled = false;
+            GameObject instance = Instantiate(explosionPrefab) as GameObject;
+            instance.transform.parent = effectArea;
+            instance.transform.localPosition = new Vector3(item.point.x * cellWidth, item.point.y * -cellHeight, -5f);
+
+            DoStarEffect(instance.transform.localPosition, type);
 
         }
 
+        foreach (MatchItem item in bombList) {
+            Sprite sprite = sprites[(int)item.cell.cellType - 1];
+            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.enabled = true;
+
+        }
 
         foreach (MatchItem item in destroyList) {
 
             int type = (int)item.cell.cellType;
             audioMatchSource[(int)(item.cell.cellType) - 1].Play();
 
-            if (type < 6) {
+//            if (type <= 5) {
                  item.cell.cellType = Data.TileTypes.Empty;
                  item.GetComponent<SpriteRenderer>().enabled = false;
-            }
+//            }
 
             GameObject instance = Instantiate(explosionPrefab) as GameObject;
 			instance.transform.parent = effectArea;
@@ -510,12 +672,12 @@ public class GameSystem : MonoBehaviour {
 
 			DoStarEffect(instance.transform.localPosition, type);
 
-            if(5 < type) {
-                Sprite sprite = sprites[(int)item.cell.cellType - 1];
-                SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-                renderer.sprite = sprite;
-                renderer.enabled = true;
-            }
+//            if(6 <= type) {
+//                Sprite sprite = sprites[(int)item.cell.cellType - 1];
+//                SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+//                renderer.sprite = sprite;
+//                renderer.enabled = true;
+//            }
 
         }
         //		StartCoroutine( AttackMonster(0.7f) );
