@@ -1,14 +1,20 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class Menu : MonoBehaviour {
     Transform target, tr;
 	void Start () {
-        tr = transform;
-        target = GameObject.Find("_Target").transform;
 	}
 	
 	void Update () {
-        tr.LookAt(target);
 	}
+
+    public void OnStartClick() {
+        SceneManager.LoadScene("Menu");
+    }
+
+    public void OnFildClick() {
+        SceneManager.LoadScene("Game0");
+    }
 }
